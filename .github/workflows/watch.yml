@@ -1,0 +1,46 @@
+name: lxi-watch
+
+# LXI.be 免费主机（btpp03.lxi.be）开通监视。
+# 唯一的定时腿是 cron-job.org 外部触发（本账号 GA 原生 schedule 不 fire），
+# 所以这里故意不写 on: schedule；只留 workflow_dispatch。
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'cron 腿填 cron（未开通静默）；手动留空（推一条现状）'
+        required: false
+        default: 'cron'
+
+concurrency:
+  group: lxi-watch
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 探测 DNS / HTTPS / 面板
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          LXI_EMAIL: ${{ secrets.LXI_EMAIL }}
+          LXI_PW: ${{ secrets.LXI_PW }}
+          INPUT_SOURCE: ${{ github.event.inputs.source }}
+        run: python3 watch.py "$INPUT_SOURCE"
+
+      - name: 提交状态变化
+        if: always()
+        run: |
+          if [ -n "$(git status --porcelain state.json)" ]; then
+            git config user.name "lxi-watch"
+            git config user.email "actions@users.noreply.github.com"
+            git add state.json
+            git commit -m "state: $(date -u '+%F %T UTC')"
+            git push
+          fi
