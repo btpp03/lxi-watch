@@ -1,6 +1,8 @@
 {
- "ready": false,
- "last_check": "2026-11-20T15:35:50Z",
- "dns": [],
- "http": 0
+ "ready": true,
+ "last_check": "2026-11-20T16:05:45Z",
+ "dns": [
+  "212.227.88.145"
+ ],
+ "http": 200
 }
